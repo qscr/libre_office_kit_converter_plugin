@@ -1,0 +1,27 @@
+name: libre_office_kit_converter_plugin
+description: "A new Flutter plugin project."
+version: 0.0.1
+
+environment:
+  sdk: ^3.10.7
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  pigeon: ^26.1.7
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.libre_office_kit_converter_plugin
+        pluginClass: LibreOfficeKitConverterPlugin
+      ios:
+        pluginClass: LibreOfficeKitConverterPlugin
