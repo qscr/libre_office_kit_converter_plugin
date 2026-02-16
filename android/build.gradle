@@ -24,6 +24,55 @@ allprojects {
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
+def lokTag = "v0.0.1"
+def lokUrl = "https://github.com/qscr/libre_office_kit_converter_plugin/releases/download/${lokTag}/android_lok.tar.gz"
+
+def lokWorkDir = file("$projectDir/lok")
+def lokArchive = file("$lokWorkDir/android_lok.tar.gz")
+def lokExtractDir = file("$lokWorkDir/extracted")
+
+tasks.register("downloadLokAndroid") {
+    outputs.file(lokArchive)
+
+    doLast {
+        lokWorkDir.mkdirs()
+
+        if (lokArchive.exists() && lokArchive.length() > 0) {
+            println("[LOK] archive already exists: $lokArchive")
+            return
+        }
+
+        println("[LOK] downloading: $lokUrl")
+        new URL(lokUrl).withInputStream { input ->
+            lokArchive.withOutputStream { out ->
+                out << input
+            }
+        }
+        println("[LOK] downloaded: $lokArchive (${lokArchive.length()} bytes)")
+    }
+}
+
+tasks.register("unpackLokAndroid") {
+    dependsOn("downloadLokAndroid")
+    inputs.file(lokArchive)
+
+    doLast {
+        lokExtractDir.mkdirs()
+
+        println("[LOK] extracting tar.gz -> $lokExtractDir")
+
+        def tarFile = file("$lokWorkDir/android_lok.tar")
+        if (!tarFile.exists()) {
+            ant.gunzip(src: lokArchive, dest: tarFile)
+            ant.untar(src: tarFile, dest: lokExtractDir)
+        }
+    }
+}
+
+project.afterEvaluate {
+    preBuild.dependsOn unpackLokAndroid
+}
+
 android {
     namespace = "com.example.libre_office_kit_converter_plugin"
 
@@ -42,9 +91,9 @@ android {
         main.java.srcDirs += "src/main/kotlin"
         main.java.srcDirs += "src/main/libreoffice"
         test.java.srcDirs += "src/test/kotlin"
-        main.jniLibs.srcDirs += "src/main/jni"
-        main.assets.srcDirs += "assets"
-        main.assets.srcDirs += "assets_strippedUI"
+        main.jniLibs.srcDirs += "$lokExtractDir.path/src/main/jni"
+        main.assets.srcDirs += "$lokExtractDir.path/assets"
+        main.assets.srcDirs += "$lokExtractDir.path/assets_strippedUI"
     }
 
     defaultConfig {

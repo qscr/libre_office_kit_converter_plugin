@@ -13,43 +13,84 @@ A new Flutter plugin project.
   s.dependency 'Flutter'
   s.platform = :ios, '14.5'
 
-s.script_phase = {
-  :name => 'Generate LibreOffice libs.filelist',
-  :execution_position => :before_compile,
-  :shell_path => '/bin/sh',
-  :script => <<-'SH'
-    set -e
+  s.prepare_command = <<-SH
+    set -euo pipefail
 
-    OUT_DIR="${PODS_TARGET_SRCROOT}/converter_out"
-    LIB_DIR="${OUT_DIR}/compiled_sources"
-    LIST="${OUT_DIR}/libs.filelist"
-    ORDER_LIST="${OUT_DIR}/ios-all-static-libs.list"
+    PLUGIN_DIR="$(pwd)"
+    OUT_DIR="${PLUGIN_DIR}/converter_out"
 
-    rm -f "$LIST"
+    URL="https://github.com/qscr/libre_office_kit_converter_plugin/releases/download/v0.0.1/ios-lok.tar.gz"
 
-    if [ ! -f "$ORDER_LIST" ]; then
-      echo "ERROR: ordering list not found: $ORDER_LIST"
-      exit 1
+    echo "[LOK] prepare_command started"
+    echo "[LOK] plugin dir: $PLUGIN_DIR"
+
+    # если уже есть — не скачиваем повторно
+    if [ -d "$OUT_DIR/compiled_sources" ] && [ -d "$OUT_DIR/resources" ]; then
+      echo "[LOK] converter_out already prepared, skip"
+      exit 0
     fi
 
-    # 1) .a in exact order from ios-all-static-libs.list
-    while IFS= read -r line || [ -n "$line" ]; do
-      case "$line" in ""|\#*) continue ;; esac
-      base="$(basename "$line")"
-      candidate="$LIB_DIR/$base"
-      [ -f "$candidate" ] && echo "$candidate" >> "$LIST"
-    done < "$ORDER_LIST"
+    TMP_DIR="$(mktemp -d)"
+    ARCHIVE="$TMP_DIR/ios-lok.tar.gz"
 
-    # 2) Add ONLY required loose .o (avoid duplicate symbols)
-    for o in "$LIB_DIR/anchor.o" "$LIB_DIR/ldvector.o"; do
-      [ -f "$o" ] && echo "$o" >> "$LIST"
-    done
+    echo "[LOK] downloading..."
+    curl -L --retry 3 -o "$ARCHIVE" "$URL"
 
-    # 3) De-dup while preserving order
-    awk '!seen[$0]++' "$LIST" > "$LIST.tmp" && mv "$LIST.tmp" "$LIST"
+    echo "[LOK] extracting to temp..."
+    tar -xzf "$ARCHIVE" -C "$TMP_DIR"
 
-    echo "Generated libs.filelist: $LIST"
+    rm -rf "$OUT_DIR"
+    mkdir -p "$OUT_DIR"
+
+    echo "[LOK] searching content..."
+
+    FOUND="$(find "$TMP_DIR" -type d -name converter_out | head -n 1 || true)"
+
+    echo "[LOK] converter_out folder not found, copying everything"
+    cp -R "$TMP_DIR"/. "$OUT_DIR"/
+
+    rm -rf "$TMP_DIR"
+
+    echo "[LOK] prepare complete"
     SH
+
+  s.script_phase = {
+    :name => 'Generate LibreOffice libs.filelist',
+    :execution_position => :before_compile,
+    :shell_path => '/bin/sh',
+    :script => <<-'SH'
+      set -e
+
+      OUT_DIR="${PODS_TARGET_SRCROOT}/converter_out"
+      LIB_DIR="${OUT_DIR}/compiled_sources"
+      LIST="${OUT_DIR}/libs.filelist"
+      ORDER_LIST="${OUT_DIR}/ios-all-static-libs.list"
+
+      rm -f "$LIST"
+
+      if [ ! -f "$ORDER_LIST" ]; then
+        echo "ERROR: ordering list not found: $ORDER_LIST"
+        exit 1
+      fi
+
+      # 1) .a in exact order from ios-all-static-libs.list
+      while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in ""|\#*) continue ;; esac
+        base="$(basename "$line")"
+        candidate="$LIB_DIR/$base"
+        [ -f "$candidate" ] && echo "$candidate" >> "$LIST"
+      done < "$ORDER_LIST"
+
+      # 2) Add ONLY required loose .o (avoid duplicate symbols)
+      for o in "$LIB_DIR/anchor.o" "$LIB_DIR/ldvector.o"; do
+        [ -f "$o" ] && echo "$o" >> "$LIST"
+      done
+
+      # 3) De-dup while preserving order
+      awk '!seen[$0]++' "$LIST" > "$LIST.tmp" && mv "$LIST.tmp" "$LIST"
+
+      echo "Generated libs.filelist: $LIST"
+      SH
   }
   
   s.pod_target_xcconfig = { 
