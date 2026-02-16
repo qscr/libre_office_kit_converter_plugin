@@ -1,6 +1,7 @@
 name: libre_office_kit_converter_plugin
-description: "A new Flutter plugin project."
+description: "Flutter plugin for document conversion powered by LibreOffice"
 version: 0.0.1
+homepage: https://github.com/qscr/libre_office_kit_converter_plugin
 
 environment:
   sdk: ^3.10.7
