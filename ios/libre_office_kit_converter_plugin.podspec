@@ -54,7 +54,8 @@ A new Flutter plugin project.
     echo "[LOK] prepare complete"
     SH
 
-  s.script_phase = {
+  s.script_phases = [
+    {
     :name => 'Generate LibreOffice libs.filelist',
     :execution_position => :before_compile,
     :shell_path => '/bin/sh',
@@ -91,7 +92,26 @@ A new Flutter plugin project.
 
       echo "Generated libs.filelist: $LIST"
       SH
-  }
+  },
+  {
+    :name => 'Copy ICU.dat to main bundle',
+    :execution_position => :after_compile,
+    :shell_path => '/bin/sh',
+    :script => <<-SCRIPT
+      set -e
+
+      SRC="${PODS_TARGET_SRCROOT}/converter_out/resources/ICU.dat"
+      DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ICU.dat"
+
+      if [ ! -f "$SRC" ]; then
+        echo "error: ICU.dat not found at $SRC"
+        exit 1
+      fi
+
+      echo "Copying ICU.dat -> $DST"
+      /bin/cp -f "$SRC" "$DST"
+    SCRIPT
+  }]
   
   s.pod_target_xcconfig = { 
     'DEFINES_MODULE' => 'YES', 

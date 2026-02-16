@@ -77,7 +77,7 @@ SPEC CHECKSUMS:
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  libre_office_kit_converter_plugin: 1f3f4adb3182066baf6cfb72113d1311a41932db
+  libre_office_kit_converter_plugin: 1587a0cf57ff6d4f8c8468a3c31fed690bd7e2b2
   open_file_ios: 46184d802ee7959203f6392abcfa0dd49fdb5be0
   SDWebImage: 16309af6d214ba3f77a7c6f6fdda888cb313a50a
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
